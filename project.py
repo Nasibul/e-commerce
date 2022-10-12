@@ -9,7 +9,7 @@ class Item:
     '''
     This is controlled by the store
     '''
-    def __init__(self, sku: float, name: str, description: str, price: float):
+    def __init__(self, sku: float, name: str, description: str, price: float, quantity: int=1):
         if type(price) == int: 
             price = float(price)
         assert type(sku) == int, f"SKU must be a float, instead found {sku}"
@@ -20,9 +20,10 @@ class Item:
         self.name = name.title()
         self.description = description
         self.price = round(price, 2)
+        self.quantity = quantity
 
     def __repr__(self):
-        return f'SKU#{self.sku}, {self.name}, {self.description}, ${"{:.2f}".format(self.price)}'
+        return f'SKU#{self.sku}, {self.name}, {self.description}, ${"{:.2f}".format(self.price)}, Quantity= {self.quantity}'
 
 
 
@@ -43,8 +44,9 @@ class Customer:
     def __repr__(self):
         return f'{self.name}, {self.age}, {self.location}'
 
-    def grab(self, item: Item):
+    def grab(self, item: Item, quantity: int=1):
         #this method is used to take an item and input into a transaction object
+        item.quantity = quantity
         self.shopping_cart.append(item)
     
     def buy(self):
@@ -54,8 +56,12 @@ class Customer:
         '''
         check_out = Transaction(self.name, self.age, self.location, self.shopping_cart)
         print(check_out)
+        print(*check_out.list, sep='\n')
+        print(f'Total is ${"{:.2f}".format(check_out.total)}')
 
-    
+    def caller(self):
+        Transaction(self.name, self.age, self.location, self.shopping_cart).receiver()
+
     def return_item(self, item: Item):
         pass
 
@@ -70,13 +76,17 @@ class Transaction(Customer):
     def __init__(self, name, age, location, shopping_cart, ts: datetime=datetime.datetime.now(), discount: float=None):
         super().__init__(name, age, location)
         self.ts = ts #ts means timestamp
-        #self.list = 
-        #self.total = 
-        self.num_items = len(shopping_cart)
+        self.list = shopping_cart
+        self.total = sum([i.price*i.quantity for i in shopping_cart])
+        self.num_items = sum([i.quantity for i in shopping_cart])
         self.discount = discount
     
+    def receiver(self):
+        cust= Customer("example", 100, 'NYC')
+        print(cust.name)
+
     def __repr__(self):
-        return f'{self.ts}, {self.num_items} items, Discount is {self.discount}'
+        return f'Date and time is {self.ts}, {self.num_items} items, Discount is {self.discount}'
 
 
 class Store:
@@ -91,12 +101,16 @@ class Store:
         pass
 
 dummy = Customer("Nash", 24, "NYC")
-dummyitem = Item(234234, "ice cream", 'chocolate', 5)
+dummyitem = Item(234234, "ice cream", 'Chocolate', 6)
+dummyitem2 = Item(3242443, "ice cream", 'Vanilla', 5)
+dummyitem3 = Item(3222443, "ice cream", 'Strawberry', 6)
 #dummytransaction = Transaction(datetime.datetime.now(), 13, "alex", 13, "nyc")
 #print(dummytransaction.name)
-dummy.grab(item=dummyitem)
+dummy.grab(dummyitem, 3)
+dummy.grab(dummyitem2, 2)
+dummy.grab(dummyitem3, 1)
+dummy.caller()
 dummy.buy()
-
 '''
 - store to spawn items
 - store to have a stock count property per item category
