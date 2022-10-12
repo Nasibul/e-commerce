@@ -52,7 +52,7 @@ class Customer:
         This method has to create a transaction and check with the store class
         Store class has to have enough of the item and then the appropriate amount is deducted
         '''
-        check_out = Transaction()
+        check_out = Transaction(self.name, self.age, self.location, self.shopping_cart)
         print(check_out)
 
     
@@ -67,12 +67,12 @@ class Transaction(Customer):
     same kind. For example, 5 packs of candy, 2 bags of chips, 3 bundles of paper plates.
     Should not be called by the user but only by the customer class
     '''
-    def __init__(self, ts: datetime=datetime.datetime.now(), discount: float=None):
-        
-        self.tx_datetime = ts #ts means timestamp
+    def __init__(self, name, age, location, shopping_cart, ts: datetime=datetime.datetime.now(), discount: float=None):
+        super().__init__(name, age, location)
+        self.ts = ts #ts means timestamp
         #self.list = 
         #self.total = 
-        self.num_items = len(Customer.shopping_cart)
+        self.num_items = len(shopping_cart)
         self.discount = discount
     
     def __repr__(self):
