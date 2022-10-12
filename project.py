@@ -22,7 +22,7 @@ class Item:
         self.price = round(price, 2)
         self.quantity = quantity
 
-    def __repr__(self):
+    def __str__(self):
         return f'SKU#{self.sku}, {self.name}, {self.description}, ${"{:.2f}".format(self.price)}, Quantity= {self.quantity}'
 
 
@@ -41,7 +41,7 @@ class Customer:
         self.location = location
         self.shopping_cart = []
 
-    def __repr__(self):
+    def __str__(self):
         return f'{self.name}, {self.age}, {self.location}'
 
     def grab(self, item: Item, quantity: int=1):
@@ -54,13 +54,11 @@ class Customer:
         This method has to create a transaction and check with the store class
         Store class has to have enough of the item and then the appropriate amount is deducted
         '''
-        check_out = Transaction(self.name, self.age, self.location, self.shopping_cart)
+        check_out = Transaction.from_parent(self)
+        print(check_out.name)
         print(check_out)
-        print(*check_out.list, sep='\n')
-        print(f'Total is ${"{:.2f}".format(check_out.total)}')
-
-    def caller(self):
-        Transaction(self.name, self.age, self.location, self.shopping_cart).receiver()
+        #print(*check_out.list, sep='\n')
+        #print(f'Total is ${"{:.2f}".format(check_out.total)}')
 
     def return_item(self, item: Item):
         pass
@@ -73,22 +71,23 @@ class Transaction(Customer):
     same kind. For example, 5 packs of candy, 2 bags of chips, 3 bundles of paper plates.
     Should not be called by the user but only by the customer class
     '''
-    def __init__(self, name, age, location, shopping_cart, ts: datetime=datetime.datetime.now(), discount: float=0.0):
-        super().__init__(name, age, location)
+    @classmethod
+    def from_parent(cls, parent):
+        return cls(parent.name, parent.age, parent.location, parent.shopping_cart)
+    
+    def __init__(self, name, age, location, ts: datetime=datetime.datetime.now(), discount: float=0.0):
+        super(Transaction, self).__init__(name, age, location)
         if type(discount) == int: 
             discount = float(discount)/100
-        self.ts = ts.strftime('%m/%d/%Y %H:%M:%S %p') #ts means timestamp
-        self.list = shopping_cart
-        self.num_items = sum([i.quantity for i in shopping_cart])
+        self.ts = ts #ts means timestamp
+        #self.list = shopping_cart
+        #self.num_items = sum([i.quantity for i in shopping_cart])
         self.discount = discount
-        self.total = sum([i.price*i.quantity for i in shopping_cart])*(1-discount)
+        #self.total = sum([i.price*i.quantity for i in shopping_cart])*(1-discount)
     
-    def receiver(self):
-        cust= Customer("example", 100, 'NYC')
-        print(cust.name)
 
-    def __repr__(self):
-        return f'Date and time is {self.ts}, {self.num_items} items, Discount is {self.discount}'
+    def __str__(self):
+        return f'Date and time is {self.ts}, items, Discount is {self.discount}'
 
 
 class Store:
@@ -111,7 +110,6 @@ dummyitem3 = Item(3222443, "ice cream", 'Strawberry', 6)
 dummy.grab(dummyitem, 3)
 dummy.grab(dummyitem2, 2)
 dummy.grab(dummyitem3, 1)
-dummy.caller()
 dummy.buy()
 '''
 - store to spawn items
