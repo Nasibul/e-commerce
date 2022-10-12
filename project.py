@@ -5,6 +5,12 @@ Will have to build a items df for all of the items.
 Same for customers and stores. 
 Can utilize the python random package to generate numbers that simulate customers
 '''
+def clear_cart(func):
+    def wrapper(*args):
+        func(*args)
+        args[0].shopping_cart = []
+    return wrapper
+
 class Item:
     '''
     This is controlled by the store
@@ -24,8 +30,6 @@ class Item:
 
     def __str__(self):
         return f'SKU#{self.sku}, {self.name}, {self.description}, ${"{:.2f}".format(self.price)}, Quantity= {self.quantity}'
-
-
 
 class Customer:
     '''
@@ -49,6 +53,7 @@ class Customer:
         item.quantity = quantity
         self.shopping_cart.append(item)
     
+    @clear_cart
     def buy(self):
         '''
         This method has to create a transaction and check with the store class
@@ -62,7 +67,6 @@ class Customer:
 
     def return_item(self, item: Item):
         pass
-
 
 class Transaction(Customer):
     '''
@@ -88,7 +92,6 @@ class Transaction(Customer):
     def __str__(self):
         return f'Date and time is {self.ts}, {self.num_items} items, Discount is {self.discount}'
 
-
 class Store:
     '''
     Controls - spawns items, approves transaction, manages inventory, deal with returns
@@ -110,6 +113,7 @@ dummy.grab(dummyitem, 3)
 dummy.grab(dummyitem2, 2)
 dummy.grab(dummyitem3, 1)
 dummy.buy()
+print(dummy.shopping_cart)
 '''
 - store to spawn items
 - store to have a stock count property per item category
