@@ -57,8 +57,8 @@ class Customer:
         check_out = Transaction.from_parent(self)
         print(check_out.name)
         print(check_out)
-        #print(*check_out.list, sep='\n')
-        #print(f'Total is ${"{:.2f}".format(check_out.total)}')
+        print(*check_out.list, sep='\n')
+        print(f'Total is ${"{:.2f}".format(check_out.total)}')
 
     def return_item(self, item: Item):
         pass
@@ -75,19 +75,19 @@ class Transaction(Customer):
     def from_parent(cls, parent):
         return cls(parent.name, parent.age, parent.location, parent.shopping_cart)
     
-    def __init__(self, name, age, location, ts: datetime=datetime.datetime.now(), discount: float=0.0):
+    def __init__(self, name, age, location, shopping_cart, ts: datetime=datetime.datetime.now(), discount: float=0.0):
         super(Transaction, self).__init__(name, age, location)
         if type(discount) == int: 
             discount = float(discount)/100
-        self.ts = ts #ts means timestamp
-        #self.list = shopping_cart
-        #self.num_items = sum([i.quantity for i in shopping_cart])
+        self.ts = ts.strftime('%m/%d/%Y %H:%M:%S %p') #ts means timestamp
+        self.list = shopping_cart
+        self.num_items = sum([i.quantity for i in shopping_cart])
         self.discount = discount
-        #self.total = sum([i.price*i.quantity for i in shopping_cart])*(1-discount)
+        self.total = sum([i.price*i.quantity for i in shopping_cart])*(1-discount)
     
 
     def __str__(self):
-        return f'Date and time is {self.ts}, items, Discount is {self.discount}'
+        return f'Date and time is {self.ts}, {self.num_items} items, Discount is {self.discount}'
 
 
 class Store:
