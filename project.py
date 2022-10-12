@@ -73,13 +73,15 @@ class Transaction(Customer):
     same kind. For example, 5 packs of candy, 2 bags of chips, 3 bundles of paper plates.
     Should not be called by the user but only by the customer class
     '''
-    def __init__(self, name, age, location, shopping_cart, ts: datetime=datetime.datetime.now(), discount: float=None):
+    def __init__(self, name, age, location, shopping_cart, ts: datetime=datetime.datetime.now(), discount: float=0.0):
         super().__init__(name, age, location)
-        self.ts = ts #ts means timestamp
+        if type(discount) == int: 
+            discount = float(discount)/100
+        self.ts = ts.strftime('%m/%d/%Y %H:%M:%S %p') #ts means timestamp
         self.list = shopping_cart
-        self.total = sum([i.price*i.quantity for i in shopping_cart])
         self.num_items = sum([i.quantity for i in shopping_cart])
         self.discount = discount
+        self.total = sum([i.price*i.quantity for i in shopping_cart])*(1-discount)
     
     def receiver(self):
         cust= Customer("example", 100, 'NYC')
