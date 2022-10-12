@@ -85,7 +85,6 @@ class Transaction(Customer):
         self.discount = discount
         self.total = sum([i.price*i.quantity for i in shopping_cart])*(1-discount)
     
-
     def __str__(self):
         return f'Date and time is {self.ts}, {self.num_items} items, Discount is {self.discount}'
 
