@@ -30,6 +30,24 @@ class Item:
 
     def __str__(self):
         return f'SKU#{self.sku}, {self.name}, {self.description}, ${"{:.2f}".format(self.price)}, Quantity= {self.quantity}'
+class Store:
+    '''
+    Controls - spawns items, approves transaction, manages inventory, deal with returns
+    '''
+    def __init__(self, location: str):
+        assert type(location) == str, f"Location must be a string, instead found {location}"
+        self.location = location
+        self.stock = []
+    
+    def restock(self, item, quantity):
+        item.quantity = quantity
+        self.stock.append(item)
+    
+    def display_stock(self):
+        print(*self.stock, sep='\n')
+
+    def __str__(self):
+        return f'{self.location} Store'
 
 class Customer:
     '''
@@ -51,7 +69,10 @@ class Customer:
     def grab(self, item: Item, quantity: int=1):
         #this method is used to take an item and input into a transaction object
         item.quantity = quantity
+        #if item.sku in store.stock:
+        #    print("yes")
         self.shopping_cart.append(item)
+        
     
     @clear_cart
     def buy(self):
@@ -92,28 +113,14 @@ class Transaction(Customer):
     def __str__(self):
         return f'Date and time is {self.ts}, {self.num_items} items, Discount is {self.discount}'
 
-class Store:
-    '''
-    Controls - spawns items, approves transaction, manages inventory, deal with returns
-    '''
-    def __init__(self, location: str):
-        assert type(location) == str, f"Location must be a string, instead found {location}"
-        self.location = location 
-    
-    def restock(item, quantity):
-        pass
-
 dummy = Customer("Nash", 24, "NYC")
 dummyitem = Item(234234, "ice cream", 'Chocolate', 6)
 dummyitem2 = Item(3242443, "ice cream", 'Vanilla', 5)
 dummyitem3 = Item(3222443, "ice cream", 'Strawberry', 6)
-#dummytransaction = Transaction(datetime.datetime.now(), 13, "alex", 13, "nyc")
-#print(dummytransaction.name)
-dummy.grab(dummyitem, 3)
-dummy.grab(dummyitem2, 2)
-dummy.grab(dummyitem3, 1)
-dummy.buy()
-print(dummy.shopping_cart)
+cool_store = Store("NYC")
+cool_store.restock(dummyitem, 10000)
+cool_store.restock(dummyitem2, 10000)
+dummy.grab(dummyitem, 4)
 '''
 - store to spawn items
 - store to have a stock count property per item category
