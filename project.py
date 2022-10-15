@@ -30,6 +30,7 @@ class Item:
 
     def __str__(self):
         return f'SKU#{self.sku}, {self.name}, {self.description}, ${"{:.2f}".format(self.price)}, Quantity= {self.quantity}'
+
 class Store:
     '''
     Controls - spawns items, approves transaction, manages inventory, deal with returns
@@ -49,6 +50,8 @@ class Store:
     def __str__(self):
         return f'{self.location} Store'
 
+cool_store = Store("NYC")
+
 class Customer:
     '''
     This is a live autonomous agent - it has its own random control
@@ -66,14 +69,19 @@ class Customer:
     def __str__(self):
         return f'{self.name}, {self.age}, {self.location}'
 
-    def grab(self, item: Item, quantity: int=1):
+    def grab(self, item: Item, quantity: int=1, store:Store = cool_store):
         #this method is used to take an item and input into a transaction object
-        item.quantity = quantity
-        #if item.sku in store.stock:
-        #    print("yes")
-        self.shopping_cart.append(item)
+        try:
+            index = store.stock.index(item)
+            if store.stock[index].quantity < quantity:
+                print(f"Quantity too high. We only have {store.stock[index].quantity} of this item.")
+            else:
+                self.shopping_cart.append(item)
+                store.stock[index].quantity -= quantity
+                print(f"Item {item} added to cart")
+        except ValueError:
+            print('Item not in stock')
         
-    
     @clear_cart
     def buy(self):
         '''
@@ -85,9 +93,15 @@ class Customer:
         print(check_out)
         print(*check_out.list, sep='\n')
         print(f'Total is ${"{:.2f}".format(check_out.total)}')
+        return check_out
 
-    def return_item(self, item: Item):
-        pass
+    #def return_item(self):
+        print()
+
+        #quantity = item.quantity
+        #index = store.stock.index(item)
+        #store.stock[index].quantity += quantity
+        #print(f"Item {item} returned to store")
 
 class Transaction(Customer):
     '''
@@ -104,23 +118,24 @@ class Transaction(Customer):
         super(Transaction, self).__init__(name, age, location)
         if type(discount) == int: 
             discount = float(discount)/100
-        self.ts = ts.strftime('%m/%d/%Y %H:%M:%S %p') #ts means timestamp
+        self.ts = ts.strftime('%m/%d/%Y %-I:%M:%S %p') #ts means timestamp
         self.list = shopping_cart
         self.num_items = sum([i.quantity for i in shopping_cart])
         self.discount = discount
         self.total = sum([i.price*i.quantity for i in shopping_cart])*(1-discount)
     
     def __str__(self):
-        return f'Date and time is {self.ts}, {self.num_items} items, Discount is {self.discount}'
+        return f'Date and time is {self.ts}, {self.num_items} items, Discount is {self.discount}%'
 
 dummy = Customer("Nash", 24, "NYC")
 dummyitem = Item(234234, "ice cream", 'Chocolate', 6)
 dummyitem2 = Item(3242443, "ice cream", 'Vanilla', 5)
 dummyitem3 = Item(3222443, "ice cream", 'Strawberry', 6)
-cool_store = Store("NYC")
 cool_store.restock(dummyitem, 10000)
 cool_store.restock(dummyitem2, 10000)
-dummy.grab(dummyitem, 4)
+dummy.grab(dummyitem, 100)
+dummy.buy()
+#dummy.return_item()
 '''
 - store to spawn items
 - store to have a stock count property per item category
