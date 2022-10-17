@@ -1,5 +1,6 @@
 import datetime
-import math 
+import pandas as pd
+import copy
 '''
 Will have to build a items df for all of the items.
 Same for customers and stores. 
@@ -45,12 +46,16 @@ class Store:
         self.stock.append(item)
     
     def display_stock(self):
+        print('STOCK')
         print(*self.stock, sep='\n')
+        print('\n')
 
     def __str__(self):
         return f'{self.location} Store'
 
 cool_store = Store("NYC")
+log = pd.DataFrame(columns=["Customer Name","Transaction Date and Time","Customer Age",\
+            "Cart","Number of Items","Discount","Total"])
 
 class Customer:
     '''
@@ -71,16 +76,24 @@ class Customer:
 
     def grab(self, item: Item, quantity: int=1, store:Store = cool_store):
         #this method is used to take an item and input into a transaction object
-        try:
+        if item in store.stock:
             index = store.stock.index(item)
             if store.stock[index].quantity < quantity:
                 print(f"Quantity too high. We only have {store.stock[index].quantity} of this item.")
             else:
-                self.shopping_cart.append(item)
-                store.stock[index].quantity -= quantity
-                print(f"Item {item} added to cart")
-        except ValueError:
+               item.quantity -= quantity
+               new_item = copy.deepcopy(item)
+               skus = [i.sku for i in self.shopping_cart]
+               if new_item.sku in skus:
+                self.shopping_cart[skus.index(new_item.sku)].quantity += quantity
+               else:
+                new_item.quantity = quantity
+                self.shopping_cart.append(new_item)
+        else:
             print('Item not in stock')
+        print('SHOPPING CART')
+        print(*self.shopping_cart, sep='\n')
+        print('\n')
         
     @clear_cart
     def buy(self):
@@ -93,15 +106,25 @@ class Customer:
         print(check_out)
         print(*check_out.list, sep='\n')
         print(f'Total is ${"{:.2f}".format(check_out.total)}')
-        return check_out
+        receipt = {
+            "Customer Name": check_out.name,
+            "Transaction Date and Time": check_out.ts,
+            "Customer Age": check_out.age,
+            "Cart": check_out.list,
+            "Number of Items": check_out.num_items,
+            "Discount": check_out.discount,
+            "Total": check_out.total
+        }
+        global log
+        log = pd.concat([log, pd.DataFrame(receipt)], ignore_index=True)
+        return None
 
     #def return_item(self):
-        print()
 
         #quantity = item.quantity
         #index = store.stock.index(item)
         #store.stock[index].quantity += quantity
-        #print(f"Item {item} returned to store")
+        print(f"Item {item} returned to store")
 
 class Transaction(Customer):
     '''
@@ -127,15 +150,6 @@ class Transaction(Customer):
     def __str__(self):
         return f'Date and time is {self.ts}, {self.num_items} items, Discount is {self.discount}%'
 
-dummy = Customer("Nash", 24, "NYC")
-dummyitem = Item(234234, "ice cream", 'Chocolate', 6)
-dummyitem2 = Item(3242443, "ice cream", 'Vanilla', 5)
-dummyitem3 = Item(3222443, "ice cream", 'Strawberry', 6)
-cool_store.restock(dummyitem, 10000)
-cool_store.restock(dummyitem2, 10000)
-dummy.grab(dummyitem, 100)
-dummy.buy()
-#dummy.return_item()
 '''
 - store to spawn items
 - store to have a stock count property per item category
