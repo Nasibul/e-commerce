@@ -16,10 +16,10 @@ class Item:
     '''
     This is controlled by the store
     '''
-    def __init__(self, sku: float, name: str, description: str, price: float, quantity: int=1):
+    def __init__(self, sku: int, name: str, description: str, price: float, quantity: int=1):
         if type(price) == int: 
             price = float(price)
-        assert type(sku) == int, f"SKU must be a float, instead found {sku}"
+        assert type(sku) == int, f"SKU must be a int, instead found {sku}"
         assert type(name) == str, f"Name must be a string, instead found {name}"
         assert type(description) == str, f"description must be a string, instead found {description}"
         assert type(price) == float, f"Price must be a float, instead found {price}"
@@ -55,7 +55,7 @@ class Store:
 
 cool_store = Store("NYC")
 log = pd.DataFrame(columns=["Customer Name","Transaction Date and Time","Customer Age",\
-            "Cart","Number of Items","Discount","Total"])
+                            "Cart","Number of Items","Discount","Total"])
 
 class Customer:
     '''
@@ -119,12 +119,12 @@ class Customer:
         log = pd.concat([log, pd.DataFrame(receipt)], ignore_index=True)
         return None
 
-    #def return_item(self):
-
-        #quantity = item.quantity
-        #index = store.stock.index(item)
-        #store.stock[index].quantity += quantity
-        print(f"Item {item} returned to store")
+    def return_item(self, item:Item, quantity:int, store:Store = cool_store):
+        index = store.stock.index(item)
+        store.stock[index].quantity += quantity
+        new_item = copy.deepcopy(item)
+        new_item.quantity = quantity
+        print(f"Item {new_item} returned to store")
 
 class Transaction(Customer):
     '''
