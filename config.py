@@ -1,0 +1,7 @@
+CUSTOMER_NAME = "Customer Name"
+TX_DT = "Transaction Date and Time"
+CUSTOMER_AGE = "Customer Age"
+CART = "Cart"
+NUMBER_OF_ITEMS = "Number of Items"
+DISCOUNT = "Discount"
+TOTAL = "Total"

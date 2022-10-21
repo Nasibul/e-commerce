@@ -1,14 +1,32 @@
 import datetime
+from unittest import result
 import pandas as pd
 import copy
-
+import config as cnf
 
 def clear_cart(func):
-    def wrapper(*args):
-        func(*args)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
         args[0].shopping_cart = []
+        return result
     return wrapper
 
+def validate_stock(func):
+    def wrapper(*args, **kwargs):
+        item = kwargs['item']
+        store = kwargs['store']
+        quantity = kwargs['quantity']
+        error = None
+        if item in store.stock:
+            index = store.stock.index(item)
+            if store.stock[item].quantity < quantity:
+                    error = f"Quantity too high. We only have {store.stock[index].quantity} of this item."
+            else:
+                return func(*args, **kwargs)
+        else:
+            error = 'Item not in stock'
+        return error
+    return wrapper
 
 class Item:
     def __init__(self, sku: int, name: str, description: str, price: float, quantity: int = 1):
@@ -33,10 +51,12 @@ class Item:
 
 class Store:
     def __init__(self, location: str):
-        assert type(
-            location) == str, f"Location must be a string, instead found {location}"
+        assert type(location) == str, f"Location must be a string, instead found {location}"
         self.location = location
         self.stock = []
+        self.log = pd.DataFrame(columns=[cnf.CUSTOMER_NAME, cnf.TX_DT, \
+                                         cnf.CUSTOMER_AGE, cnf.CART, cnf.NUMBER_OF_ITEMS, \
+                                         cnf.DISCOUNT, cnf.TOTAL])
 
     def restock(self, item, quantity):
         item.quantity = quantity
@@ -52,9 +72,6 @@ class Store:
 
 
 # cool_store = Store("NYC")
-log = pd.DataFrame(columns=["Customer Name", "Transaction Date and Time", "Customer Age",
-                            "Cart", "Number of Items", "Discount", "Total"])
-
 
 class Customer:
     def __init__(self, name: str, age: int, location: str):
@@ -72,48 +89,35 @@ class Customer:
     def __str__(self):
         return f'{self.name}, {self.age}, {self.location}'
 
+    @validate_stock
     def grab(self, item: Item, store: Store, quantity: int = 1):
         # this method is used to take an item and input into a transaction object
-        if item in store.stock:
-            index = store.stock.index(item)
-            if store.stock[index].quantity < quantity:
-                print(
-                    f"Quantity too high. We only have {store.stock[index].quantity} of this item.")
-            else:
-                item.quantity -= quantity
-                new_item = copy.deepcopy(item)
-                skus = [i.sku for i in self.shopping_cart]
-                if new_item.sku in skus:
-                    self.shopping_cart[skus.index(
-                        new_item.sku)].quantity += quantity
-                else:
-                    new_item.quantity = quantity
-                    self.shopping_cart.append(new_item)
+        item.quantity -= quantity
+        new_item = copy.deepcopy(item)
+        skus = [i.sku for i in self.shopping_cart]
+        if new_item.sku in skus:
+            self.shopping_cart[skus.index(
+                new_item.sku)].quantity += quantity
         else:
-            print('Item not in stock')
-        print('SHOPPING CART')
-        print(*self.shopping_cart, sep='\n')
-        print('\n')
+            new_item.quantity = quantity
+            self.shopping_cart.append(new_item)
+        shopping_cart_contents = f'SHOPPING CART {self.shopping_cart}'
+        return shopping_cart_contents
 
     @clear_cart
-    def buy(self):
+    def buy(self, store:Store):
         check_out = Transaction.from_parent(self)
-        print(check_out.name)
-        print(check_out)
-        print(*check_out.list, sep='\n')
-        print(f'Total is ${"{:.2f}".format(check_out.total)}')
         receipt = {
-            "Customer Name": check_out.name,
-            "Transaction Date and Time": check_out.ts,
-            "Customer Age": check_out.age,
-            "Cart": check_out.list,
-            "Number of Items": check_out.num_items,
-            "Discount": check_out.discount,
-            "Total": check_out.total
+            cnf.CUSTOMER_NAME: check_out.name,
+            cnf.TX_DT: check_out.ts,
+            cnf.CUSTOMER_AGE: check_out.age,
+            cnf.CART: check_out.list,
+            cnf.NUMBER_OF_ITEMS: check_out.num_items,
+            cnf.DISCOUNT: check_out.discount,
+            cnf.TOTAL: check_out.total
         }
-        global log
-        log = pd.concat([log, pd.DataFrame(receipt)], ignore_index=True)
-        return None
+        store.log = pd.concat([store.log, pd.DataFrame(receipt)], axis=0)
+        return check_out
 
     def return_item(self, item: Item, quantity: int, store: Store):
         index = store.stock.index(item)
