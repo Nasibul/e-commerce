@@ -4,11 +4,11 @@ import copy
 from Classes import *
 
 # TODO 
-# fix code
-# decorator validation
-# tx log store
-# column names global vars
-# validate transaction wrappers
+# .index remove through stock as dataframe
+# get rid of prints
+# multi wrapper validate stock + validate transaction
+# unitest each method - reference test time buy method = 1 min 25 secs
+# git hook that runs tests on code push
 # spawn store function
 # spawn customer - real or agent
 # main function
