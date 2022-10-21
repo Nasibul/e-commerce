@@ -3,6 +3,20 @@ import datetime
 import copy
 from Classes import *
 
+# TODO 
+# fix code
+# tx log store
+# column names global vars
+# validate transaction wrappers
+# spawn store function
+# spawn customer - real or agent
+# main function
+# write agent
+# create task agent
+
+cool_store = Store("NYC")
+tx_log = pd.DataFrame(columns=["Customer Name", "Transaction Date and Time", "Customer Age",
+                            "Cart", "Number of Items", "Discount", "Total"])
 items_source = pd.read_csv('items.csv')
 items_source.index +=1
 for i in range(len(items_source)):
@@ -11,7 +25,7 @@ for i in range(len(items_source)):
     description = items_source.iloc[i]['Description']
     price = float(items_source.iloc[i]['Price'])
     item = Item(sku, name, description, price)
-    cool_store.restock(item, 10000)
+    cool_store.restock(item, 50)
 
 print(f"Welcome to the {cool_store.location} store!")
 name = input("Please enter your name\n")
@@ -31,7 +45,7 @@ while sku != 999:
         quantity = int(input('Quantity?\n'))
         index = all_sku.index(sku)
         item = cool_store.stock[index]
-        dummy.grab(item, quantity)
+        dummy.grab(item, quantity, cool_store)
         print('Added to cart')
         sku = int(input())
     elif sku != 0: 
@@ -42,7 +56,9 @@ while sku != 999:
         return_quantity = int(input('Item quantity?\n'))
         return_index = all_sku.index(return_sku)
         return_item = cool_store.stock[return_index]
-        dummy.return_item(return_item, return_quantity)
+        dummy.return_item(return_item, return_quantity, cool_store)
         sku = int(input())
+
 print('\n')
 dummy.buy()
+
