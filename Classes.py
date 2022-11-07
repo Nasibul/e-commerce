@@ -2,6 +2,8 @@ import datetime
 from unittest import result
 import pandas as pd
 import config as cnf
+import timeit
+import random
 
 def clear_cart(func):
     def wrapper(*args, **kwargs):
@@ -27,29 +29,27 @@ class Item:
     def __str__(self):
         return f'SKU#{self.sku}, {self.name}, {self.description}, ${"{:.2f}".format(self.price)}, Quantity= {self.quantity}'
 
-
 class Store:
     def __init__(self, location: str):
         assert type(location) == str, f"Location must be a string, instead found {location}"
         self.location = location
-        self.stock = pd.read_csv('items.csv')
-        self.stock.index +=1
-        self.stock["SKU"] = self.stock.index
-        self.stock['Quantity'] = 100       
         self.log = pd.DataFrame(columns=[cnf.CUSTOMER_NAME, cnf.TX_DT, \
                                          cnf.CUSTOMER_AGE, cnf.CART, cnf.NUMBER_OF_ITEMS, \
                                          cnf.DISCOUNT, cnf.TOTAL])
 
-    def restock(self, item, quantity):
-        item.quantity = quantity
-        item_restock = {
-            'SKU': item.sku, 
-            'Name': item.name, 
-            'Description': item.description, 
-            'Price': item.price, 
-            'Quantity': item.quantity
-        }
-        self.stock = pd.concat([self.stock, pd.DataFrame(item_restock, index=None)], axis=0)
+    def gen_stock(self, path: str):
+        #assert path exists
+        #asset specific columns exists
+
+
+        temp = pd.read_csv(path)
+        self.stock = pd.DataFrame({
+            cnf.ITEM_PRICE: temp["Price"],
+            cnf.ITEM_NAME: temp['Name'],
+            cnf.ITEM_DESCRIPTION: temp['Description'],
+            cnf.SKU_ID: str(temp.index)+temp["Name"][0],
+            cnf.QUANTITY: 100 + random.randint(30, 90)
+        }) 
 
     def display_stock(self):
         print(self.stock)
@@ -88,7 +88,14 @@ class Customer:
             cnf.DISCOUNT: check_out.discount,
             cnf.TOTAL: check_out.total
         }
+        dummy_list = []
+        start = timeit.default_timer()
         store.log = pd.concat([store.log, pd.DataFrame(receipt)], axis=0)
+        pause = timeit.default_timer()
+        dummy_list.append(receipt)
+        stop = timeit.default_timer()
+        print(pause-start)
+        print(stop-pause)
         return check_out
 
 class Transaction(Customer):

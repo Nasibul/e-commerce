@@ -1,22 +1,23 @@
 import pandas as pd
 import datetime
-import copy
 from Classes import *
 from config import *
 
 # TODO 
-# .index remove through stock as dataframe
-# get rid of prints
-# multi wrapper validate stock + validate transaction
+
+# multi decorator validation for grab
+# make gen stock secure
+# log should be list 
 # unitest each method - reference test time buy method = 1 min 25 secs
+# call buy method seperately from command line
 # git hook that runs tests on code push
-# spawn store function
-# spawn customer - real or agent
 # main function
 # write agent
 # create task agent
+# test driven development
 
 cool_store = Store(location="NYC")
+cool_store.gen_stock(path='items.csv')
 
 print(f"Welcome to the {cool_store.location} store!")
 name = input("Please enter your name\n")
@@ -31,9 +32,9 @@ cool_store.display_stock()
 sku = int(input())
 
 while sku != 999:
-    if sku in cool_store.stock["SKU"]:
+    if sku in cool_store.stock[SKU_ID]:
         quantity = int(input('Quantity?\n'))
-        row = cool_store.stock[cool_store.stock["SKU"]==sku].iloc[0]
+        row = cool_store.stock[cool_store.stock[SKU_ID]==sku].iloc[0]
         item = Item(sku=sku, name= row["Name"], description=row['Description'], price=int(row['Price']))
         if quantity > row["Quantity"]:
             print('''We do not have not much of this particular item.
@@ -47,9 +48,9 @@ Please enter another item or a lesser quantity of this item.''')
         sku = int(input())
     elif sku == 0:
         return_sku = int(input('Item SKU?\n'))
-        if return_sku in cool_store.stock["SKU"]:
+        if return_sku in cool_store.stock[SKU_ID]:
             return_quantity = int(input('Item quantity?\n'))
-            return_item_row = cool_store.stock[cool_store.stock["SKU"]==return_sku].index[0]
+            return_item_row = cool_store.stock[cool_store.stock[SKU_ID]==return_sku].index[0]
             cool_store.stock.at[return_item_row, "Quantity"] += return_quantity
             print(f"Item returned to store")
         sku = int(input())
