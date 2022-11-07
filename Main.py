@@ -2,6 +2,7 @@ import pandas as pd
 import datetime
 import copy
 from Classes import *
+from config import *
 
 # TODO 
 # .index remove through stock as dataframe
@@ -16,15 +17,6 @@ from Classes import *
 # create task agent
 
 cool_store = Store(location="NYC")
-items_source = pd.read_csv('items.csv')
-items_source.index +=1
-for i in range(len(items_source)):
-    sku = int(i)
-    name = items_source.iloc[i]['Name']
-    description = items_source.iloc[i]['Description']
-    price = float(items_source.iloc[i]['Price'])
-    item = Item(sku=sku, name=name, description=description, price=price)
-    cool_store.restock(item=item, quantity=50)
 
 print(f"Welcome to the {cool_store.location} store!")
 name = input("Please enter your name\n")
@@ -37,25 +29,29 @@ To finish grabbing items, type 999 to check out.
 To return an item, type 0''','\n')
 cool_store.display_stock()
 sku = int(input())
-all_sku = [i.sku for i in cool_store.stock]
 
 while sku != 999:
-    if sku in all_sku:
+    if sku in cool_store.stock["SKU"]:
         quantity = int(input('Quantity?\n'))
-        index = all_sku.index(sku)
-        item = cool_store.stock[index]
-        dummy.grab(item=item, quantity=quantity, store=cool_store)
-        print('Added to cart')
+        row = cool_store.stock[cool_store.stock["SKU"]==sku].iloc[0]
+        item = Item(sku=sku, name= row["Name"], description=row['Description'], price=int(row['Price']))
+        if quantity > row["Quantity"]:
+            print('''We do not have not much of this particular item.
+Please enter another item or a lesser quantity of this item.''')
+        else:
+            dummy.grab(item=item, quantity=quantity, store=cool_store)
+            print('Added to cart')
         sku = int(input())
     elif sku != 0: 
         print('We do not have that item. Please enter a SKU')
         sku = int(input())
     elif sku == 0:
         return_sku = int(input('Item SKU?\n'))
-        return_quantity = int(input('Item quantity?\n'))
-        return_index = all_sku.index(return_sku)
-        return_item = cool_store.stock[return_index]
-        dummy.return_item(item=return_item, quantity=return_quantity, store=cool_store)
+        if return_sku in cool_store.stock["SKU"]:
+            return_quantity = int(input('Item quantity?\n'))
+            return_item_row = cool_store.stock[cool_store.stock["SKU"]==return_sku].index[0]
+            cool_store.stock.at[return_item_row, "Quantity"] += return_quantity
+            print(f"Item returned to store")
         sku = int(input())
 
 print('\n')

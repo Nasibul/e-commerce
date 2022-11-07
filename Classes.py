@@ -1,7 +1,6 @@
 import datetime
 from unittest import result
 import pandas as pd
-import copy
 import config as cnf
 
 def clear_cart(func):
@@ -11,34 +10,14 @@ def clear_cart(func):
         return result
     return wrapper
 
-def validate_stock(func):
-    def wrapper(*args, **kwargs):
-        item = kwargs['item']
-        store = kwargs['store']
-        quantity = kwargs['quantity']
-        error = None
-        if item in store.stock:
-            index = store.stock.index(item)
-            if store.stock[item].quantity < quantity:
-                    error = f"Quantity too high. We only have {store.stock[index].quantity} of this item."
-            else:
-                return func(*args, **kwargs)
-        else:
-            error = 'Item not in stock'
-        return error
-    return wrapper
-
 class Item:
     def __init__(self, sku: int, name: str, description: str, price: float, quantity: int = 1):
         if type(price) == int:
             price = float(price)
         assert type(sku) == int, f"SKU must be a int, instead found {sku}"
-        assert type(
-            name) == str, f"Name must be a string, instead found {name}"
-        assert type(
-            description) == str, f"description must be a string, instead found {description}"
-        assert type(
-            price) == float, f"Price must be a float, instead found {price}"
+        assert type(name) == str, f"Name must be a string, instead found {name}"
+        assert type(description) == str, f"description must be a string, instead found {description}"
+        assert type(price) == float, f"Price must be a float, instead found {price}"
         self.sku = sku
         self.name = name.title()
         self.description = description
@@ -53,34 +32,36 @@ class Store:
     def __init__(self, location: str):
         assert type(location) == str, f"Location must be a string, instead found {location}"
         self.location = location
-        self.stock = []
+        self.stock = pd.read_csv('items.csv')
+        self.stock.index +=1
+        self.stock["SKU"] = self.stock.index
+        self.stock['Quantity'] = 100       
         self.log = pd.DataFrame(columns=[cnf.CUSTOMER_NAME, cnf.TX_DT, \
                                          cnf.CUSTOMER_AGE, cnf.CART, cnf.NUMBER_OF_ITEMS, \
                                          cnf.DISCOUNT, cnf.TOTAL])
 
     def restock(self, item, quantity):
         item.quantity = quantity
-        self.stock.append(item)
+        item_restock = {
+            'SKU': item.sku, 
+            'Name': item.name, 
+            'Description': item.description, 
+            'Price': item.price, 
+            'Quantity': item.quantity
+        }
+        self.stock = pd.concat([self.stock, pd.DataFrame(item_restock, index=None)], axis=0)
 
     def display_stock(self):
-        print('STOCK')
-        print(*self.stock, sep='\n')
-        print('\n')
+        print(self.stock)
 
     def __str__(self):
         return f'{self.location} Store'
 
-
-# cool_store = Store("NYC")
-
 class Customer:
     def __init__(self, name: str, age: int, location: str):
-        #super(Customer, self).__init__()
-        assert type(
-            name) == str, f"Name must be a string, instead found {name}"
+        assert type(name) == str, f"Name must be a string, instead found {name}"
         assert type(age) == int, f"Age must be an integer, instead found {age}"
-        assert type(
-            location) == str, f"Location must be a string, instead found {location}"
+        assert type(location) == str, f"Location must be a string, instead found {location}"
         self.name = name
         self.age = age
         self.location = location
@@ -89,18 +70,9 @@ class Customer:
     def __str__(self):
         return f'{self.name}, {self.age}, {self.location}'
 
-    @validate_stock
     def grab(self, item: Item, store: Store, quantity: int = 1):
-        # this method is used to take an item and input into a transaction object
-        item.quantity -= quantity
-        new_item = copy.deepcopy(item)
-        skus = [i.sku for i in self.shopping_cart]
-        if new_item.sku in skus:
-            self.shopping_cart[skus.index(
-                new_item.sku)].quantity += quantity
-        else:
-            new_item.quantity = quantity
-            self.shopping_cart.append(new_item)
+        item.quantity = quantity
+        self.shopping_cart.append(item)
         shopping_cart_contents = f'SHOPPING CART {self.shopping_cart}'
         return shopping_cart_contents
 
@@ -118,14 +90,6 @@ class Customer:
         }
         store.log = pd.concat([store.log, pd.DataFrame(receipt)], axis=0)
         return check_out
-
-    def return_item(self, item: Item, quantity: int, store: Store):
-        index = store.stock.index(item)
-        store.stock[index].quantity += quantity
-        new_item = copy.deepcopy(item)
-        new_item.quantity = quantity
-        print(f"Item {new_item} returned to store")
-
 
 class Transaction(Customer):
     @classmethod
