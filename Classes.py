@@ -12,11 +12,36 @@ def clear_cart(func):
         return result
     return wrapper
 
+def return_option(func):
+    def wrapper(*args, **kwargs):
+        if kwargs['sku'] == '0':
+            return_sku = str(input('Return Item SKU?\n'))
+            return_quantity = int(input('Item quantity?\n'))
+            return_item_row = kwargs['store'].stock[kwargs['store'].stock[cnf.SKU_ID]==return_sku].index[0]
+            kwargs['store'].stock.at[return_item_row, "Quantity"] += return_quantity
+            print(f"Item returned to store")
+        func(*args, **kwargs)
+    return wrapper
+
+def existance_quantity(func):
+    def wrapper(*args, **kwargs):
+        try:
+            row = kwargs['store'].stock[kwargs['store'].stock[cnf.SKU_ID]==kwargs['sku']].iloc[0]
+            if kwargs['quantity'] > int(row["Quantity"]):
+                print('''We do not have not much of this particular item.
+Please enter another item or a lesser quantity of this item.''')
+            func(*args, **kwargs)
+        except:
+            if kwargs['sku'] == '0':
+                pass
+            else:
+                print('We do not have that item. Please enter a SKU')
+    return wrapper
+
 class Item:
-    def __init__(self, sku: int, name: str, description: str, price: float, quantity: int = 1):
+    def __init__(self, sku: int, name: str, description: str, price: float):
         if type(price) == int:
             price = float(price)
-        assert type(sku) == int, f"SKU must be a int, instead found {sku}"
         assert type(name) == str, f"Name must be a string, instead found {name}"
         assert type(description) == str, f"description must be a string, instead found {description}"
         assert type(price) == float, f"Price must be a float, instead found {price}"
@@ -24,7 +49,6 @@ class Item:
         self.name = name.title()
         self.description = description
         self.price = round(price, 2)
-        self.quantity = quantity
 
     def __str__(self):
         return f'SKU#{self.sku}, {self.name}, {self.description}, ${"{:.2f}".format(self.price)}, Quantity= {self.quantity}'
@@ -47,9 +71,9 @@ class Store:
             cnf.ITEM_PRICE: temp["Price"],
             cnf.ITEM_NAME: temp['Name'],
             cnf.ITEM_DESCRIPTION: temp['Description'],
-            cnf.SKU_ID: str(temp.index)+temp["Name"][0],
-            cnf.QUANTITY: 100 + random.randint(30, 90)
         }) 
+        self.stock[cnf.SKU_ID] = [str(i)+temp["Name"][i][1] for i in temp.index]
+        self.stock[cnf.QUANTITY] = [random.randint(130, 190) for i in temp.index]
 
     def display_stock(self):
         print(self.stock)
@@ -69,10 +93,15 @@ class Customer:
 
     def __str__(self):
         return f'{self.name}, {self.age}, {self.location}'
-
-    def grab(self, item: Item, store: Store, quantity: int = 1):
+    
+    @return_option
+    @existance_quantity
+    def grab(self, sku: str, store: Store, quantity: int):
+        row = store.stock[store.stock[cnf.SKU_ID]==sku].iloc[0]
+        item = Item(sku=sku, name=str(row["Name"]), description=str(row['Description']), price=int(row['Price']))
         item.quantity = quantity
         self.shopping_cart.append(item)
+        print("Added to cart")
         shopping_cart_contents = f'SHOPPING CART {self.shopping_cart}'
         return shopping_cart_contents
 
@@ -88,14 +117,6 @@ class Customer:
             cnf.DISCOUNT: check_out.discount,
             cnf.TOTAL: check_out.total
         }
-        dummy_list = []
-        start = timeit.default_timer()
-        store.log = pd.concat([store.log, pd.DataFrame(receipt)], axis=0)
-        pause = timeit.default_timer()
-        dummy_list.append(receipt)
-        stop = timeit.default_timer()
-        print(pause-start)
-        print(stop-pause)
         return check_out
 
 class Transaction(Customer):
