@@ -4,6 +4,7 @@ import pandas as pd
 import config as cnf
 import timeit
 import random
+import os.path
 
 def clear_cart(func):
     def wrapper(*args, **kwargs):
@@ -29,8 +30,9 @@ def existance_quantity(func):
             row = kwargs['store'].stock[kwargs['store'].stock[cnf.SKU_ID]==kwargs['sku']].iloc[0]
             if kwargs['quantity'] > int(row["Quantity"]):
                 print('''We do not have not much of this particular item.
-Please enter another item or a lesser quantity of this item.''')
-            func(*args, **kwargs)
+Please enter another item or the same sku and a lesser quantity of this item.''')
+            else:
+                func(*args, **kwargs)
         except:
             if kwargs['sku'] == '0':
                 pass
@@ -61,12 +63,12 @@ class Store:
                                          cnf.CUSTOMER_AGE, cnf.CART, cnf.NUMBER_OF_ITEMS, \
                                          cnf.DISCOUNT, cnf.TOTAL])
 
-    def gen_stock(self, path: str):
-        #assert path exists
-        #asset specific columns exists
-
-
-        temp = pd.read_csv(path)
+    def gen_stock(self, filepath: str):
+        assert os.path.exists(filepath) == True, "File not found"
+        temp = pd.read_csv(filepath)
+        assert cnf.ITEM_PRICE == temp.columns[2], "Column not found"
+        assert cnf.ITEM_NAME == temp.columns[0], "Column not found"
+        assert cnf.ITEM_DESCRIPTION == temp.columns[1], "Column not found"
         self.stock = pd.DataFrame({
             cnf.ITEM_PRICE: temp["Price"],
             cnf.ITEM_NAME: temp['Name'],

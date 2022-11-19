@@ -5,7 +5,6 @@ from config import *
 
 # TODO 
 
-# multi decorator validation for grab
 # make gen stock secure
 # log should be list 
 # unitest each method - reference test time buy method = 1 min 25 secs
@@ -17,7 +16,7 @@ from config import *
 # test driven development
 
 cool_store = Store(location="NYC")
-cool_store.gen_stock(path='items.csv')
+cool_store.gen_stock(filepath='items.csv')
 
 print(f"Welcome to the {cool_store.location} store!")
 name = input("Please enter your name\n")
@@ -36,6 +35,8 @@ while sku != '999':
         quantity = 0
     else:
         quantity = int(input('Quantity?\n'))
+        while quantity <= 0:
+            quantity = int(input('Please enter an actual amount\n'))
     dummy.grab(sku=sku, quantity=quantity, store=cool_store)
     sku = str(input())
 
