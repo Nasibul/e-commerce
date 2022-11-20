@@ -10,3 +10,4 @@ QUANTITY = 'Quantity'
 ITEM_PRICE = "Price"
 ITEM_NAME = "Name"
 ITEM_DESCRIPTION = "Description"
+LOCATIONS = ["NYC", 'Washington DC', "Chicago", "Boston", "Miami"]

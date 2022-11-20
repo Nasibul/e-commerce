@@ -1,0 +1,1 @@
+LOCATIONS = ["NYC", 'Washington DC', "Chicago", "Boston", "Miami"]

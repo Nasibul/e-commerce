@@ -12,7 +12,7 @@ def clear_cart(func):
         args[0].shopping_cart = []
         return result
     return wrapper
-
+# validate return option 
 def return_option(func):
     def wrapper(*args, **kwargs):
         if kwargs['sku'] == '0':
