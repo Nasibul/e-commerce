@@ -8,9 +8,9 @@ class Tester(unittest.TestCase):
         dummy = Customer(name='Nasibul', age=24, location='NYC')
         dummy_store = Store(location="NYC")
         dummy_store.gen_stock(filepath='items.csv')
-        dummy.grab(sku='33r', store=dummy_store, quantity=1000000)
+        dummy.grab(sku=33, store=dummy_store, quantity=1000000)
         self.assertEqual(len(dummy.shopping_cart), 0)
-        dummy.grab(sku='33r', store=dummy_store, quantity=10)
+        dummy.grab(sku=33, store=dummy_store, quantity=10)
         self.assertEqual(len(dummy.shopping_cart), 1)
         
 if __name__ == '__main__':
