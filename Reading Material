@@ -8,3 +8,16 @@ https://www.geeksforgeeks.org/decorators-with-parameters-in-python/
 https://towardsdatascience.com/function-wrappers-in-python-5146f3ad0601
 https://machinelearningmastery.com/a-gentle-introduction-to-unit-testing-in-python/
 https://www.youtube.com/watch?v=6tNS--WetLI
+
+Inventory is typically not managed in POS. 
+ERP and MRP 
+Supply Chain in 3 layers: physical layer(moving material around, tech, teams that do functions), financial layer(balance sheet, working capital), 
+Materials to be inside company for as little time as possible, just in time principle, 
+Demand is stocastic 
+Consumer buying patterns   
+Holding cost 
+O9 solutions
+Management team 
+Inventory turnover
+supply chain bottlenecked
+Use Pandera 
