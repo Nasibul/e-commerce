@@ -26,13 +26,30 @@ es = keras.callbacks.EarlyStopping(
 es_scale = keras.callbacks.EarlyStopping(monitor='loss', mode='min', patience=10, min_delta=0.0000005)
 exog = pickle.load(
     open('/home/nasibul/Desktop/e-commerce/Advanced ARIMA/Data/exog.pkl', 'rb'))
+exog['Guayaquil'][1297] = 1
+for i in exog.columns:
+    if all(exog[i].isin([0, 1])) and exog[i].nunique()==2:
+        exog[i] = exog[i].astype('uint8')
 log_dir = "logs/fit/" + dt.now().strftime('%m/%d/%Y %-I:%M:%S %p')
 tensorboard = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 learning_rates = [0.01, 0.0075, 0.005, 0.0025, 0.001, 0.00075,
                   0.0005, 0.00025, 0.0001, 0.000075, 0.00005, 0.000025, 0.00001]
-time_step = 30
+time_step = 6
 
 def data_prep(df, time_step=time_step, forecast=False, scale=False):
+    if scale==True:
+        indicator_variables_columns = []
+        for i in df.columns:
+            if df[i].dtype == 'uint8':
+                indicator_variables_columns.append(i)
+        indicator_variables = df[indicator_variables_columns]
+        df = df.drop(indicator_variables_columns, axis=1)
+        indicator_x = []
+        for i in range(len(indicator_variables)-time_step):
+            indicator_x.append(indicator_variables.iloc[i:i+time_step, :])
+        indicator_x = np.array(indicator_x)
+
+
     X, y = [], []
     if forecast == False:
         for i in range(len(df)-time_step):
@@ -50,14 +67,22 @@ def data_prep(df, time_step=time_step, forecast=False, scale=False):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10, random_state=5, shuffle=False)
     if forecast == False:
         y_test = pd.DataFrame(y_test, columns=df.columns, index=df.index[-y_test.shape[0]:])
+    else:
+        y_test = train.iloc[-len(train)//10:, :]
     if scale==True:
         scaler_x = StandardScaler()
         scaler_y = StandardScaler()
         X_train = X_train.reshape(-1, X_train.shape[-1])
         X_test = X_test.reshape(-1, X_test.shape[-1])
         y_train = y_train.reshape(-1, y_train.shape[-1])
+        if indicator_x.any():
+            indicator_x = indicator_x.reshape(-1, indicator_x.shape[-1])
         X_train = scaler_x.fit_transform(X_train)
+        if indicator_x.any():
+            X_train = np.concatenate([indicator_x[:X_train.shape[0]], X_train], axis=1)
         X_test = scaler_x.transform(X_test)
+        if indicator_x.any():
+            X_test = np.concatenate([indicator_x[-X_test.shape[0]:], X_test], axis=1)
         y_train = scaler_y.fit_transform(y_train)
         X_train = X_train.reshape(-1, time_step, X_train.shape[-1])
         X_test = X_test.reshape(-1, time_step, X_test.shape[-1])        
@@ -75,24 +100,24 @@ def data_prep(df, time_step=time_step, forecast=False, scale=False):
     return X_train, X_test, y_train, y_test
 
 
-def predict(model, X_train, y_train, X_test, y_test, forecast=False, scaler_y=None):
+def predict(model, X_train, y_train, X_test, y_test, forecast=False, scaler_y=None, batch_size=32):
     if scaler_y==None:
-        model.fit(X_train, y_train, epochs=500, verbose=0, callbacks=[es, tensorboard])
+        model.fit(X_train, y_train, epochs=1000, batch_size=batch_size, verbose=0, callbacks=[es, tensorboard])
         pred_model = model.predict(X_test)
         if forecast==False:
             pred = pd.DataFrame(pred_model, columns=y_test.columns, index=y_test.index)           
         else:
-            pred = pd.DataFrame(pred_model[-1].T, columns=y_test.columns, index=test.index.unique())
+            pred = pd.DataFrame(pred_model[-1], columns=y_test.columns, index=test.index.unique())
     else:
-        model.fit(X_train, y_train, epochs=500, verbose=0, callbacks=[es_scale, tensorboard])
+        model.fit(X_train, y_train, epochs=1000, batch_size=batch_size, verbose=0, callbacks=[es_scale, tensorboard])
         pred_model = model.predict(X_test)
         if forecast==False:
             pred_model = scaler_y.inverse_transform(pred_model)
             pred = pd.DataFrame(pred_model, columns=y_test.columns, index=y_test.index)
         else:
-            pred_model = scaler_y.inverse_transform(pred_model[-1].T)
+            pred_model = scaler_y.inverse_transform(pred_model[-1])
             pred = pd.DataFrame(pred_model, columns=y_test.columns, index=test.index.unique())
-    pred = pred.iloc[:, -1782:]
+    pred = abs(pred.iloc[:, -1782:])
     return pred
 
 
@@ -139,12 +164,12 @@ def submit(pred):
 
 def tuning(model, X_train_mini, y_train_mini, X_val_mini, y_val_mini, scaler_y):
     tuner = keras_tuner.RandomSearch(
-        model, objective='val_loss', max_trials=60, overwrite=True, max_consecutive_failed_trials=None)
+        model, objective='val_loss', max_trials=200, overwrite=True, max_consecutive_failed_trials=None)
     if scaler_y == None:
-        tuner.search(X_train_mini, y_train_mini, epochs=100,
+        tuner.search(X_train_mini, y_train_mini, epochs=20,
                     validation_data=(X_val_mini, y_val_mini), callbacks=[es])
     else:
-        tuner.search(X_train_mini, y_train_mini, epochs=100,
+        tuner.search(X_train_mini, y_train_mini, epochs=20,
                     validation_data=(X_val_mini, y_val_mini), callbacks=[es_scale])
     best_params = tuner.get_best_hyperparameters()[0]
     model = tuner.hypermodel.build(best_params)
@@ -190,7 +215,7 @@ def custom_compare(y_test, pred, cols_list):
     plt.show()
 
 
-def experiment(X_train, X_test, y_train, y_test, model, model_number, description, tune=True, forecast=False, scaler_y=None):
+def experiment(X_train, X_test, y_train, y_test, model, model_number, description, tune=True, forecast=False, scaler_y=None, batch_size=32):
     if tune==True:
         y_train_mini = y_train[:200, :]
         y_val_mini = y_train[200:220, :]
@@ -210,7 +235,7 @@ def experiment(X_train, X_test, y_train, y_test, model, model_number, descriptio
         hp.Fixed('optimizer', 'adam')
         best_params = 'No tuning'
         hypertuned_model = model(hp)
-    pred = predict(hypertuned_model, X_train, y_train, X_test, y_test, forecast=forecast, scaler_y=scaler_y)
+    pred = predict(hypertuned_model, X_train, y_train, X_test, y_test, forecast=forecast, scaler_y=scaler_y, batch_size=batch_size)
     compare(y_test.iloc[:, -1782:], pred)
     results = compare_all_series(y_test.iloc[:, -1782:], pred)
     full_experiment = {'model_number': model_number,
