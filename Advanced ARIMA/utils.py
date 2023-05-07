@@ -231,7 +231,7 @@ def experiment(X_train, X_test, y_train, y_test, model, model_number, descriptio
         hypertuned_model, best_params = tuning(model, X_train_mini, y_train_mini, X_val_mini, y_val_mini, scaler_y)
     else:
         hp = keras_tuner.HyperParameters()
-        hp.Fixed('learning_rate', 0.001)
+        hp.Fixed('learning_rate', 0.00025)
         hp.Fixed('optimizer', 'adam')
         best_params = 'No tuning'
         hypertuned_model = model(hp)
