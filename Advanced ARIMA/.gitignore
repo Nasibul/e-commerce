@@ -1,3 +1,6 @@
 *.csv
 *.json
 *.pkl
+*.json
+untitled_project/
+logs/

@@ -21,9 +21,8 @@ train.columns = [f"{a[0]}_{a[1].replace('/','_')}" for a in train.columns]
 test = pd.read_csv(
     '/home/nasibul/Desktop/e-commerce/Advanced ARIMA/Data/test.csv', index_col='date')
 test.index = pd.to_datetime(test.index)
-es = keras.callbacks.EarlyStopping(
-    monitor='loss', mode='min', patience=10, min_delta=0.05)
-es_scale = keras.callbacks.EarlyStopping(monitor='loss', mode='min', patience=10, min_delta=0.0000005)
+es = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=10, min_delta=0.05, restore_best_weights=True)
+es_scale = keras.callbacks.EarlyStopping(monitor='val_loss', mode='min', patience=10, min_delta=0.0000005, restore_best_weights=True)
 exog = pickle.load(
     open('/home/nasibul/Desktop/e-commerce/Advanced ARIMA/Data/exog.pkl', 'rb'))
 exog['Guayaquil'][1297] = 1
@@ -101,15 +100,24 @@ def data_prep(df, time_step=time_step, forecast=False, scale=False):
 
 
 def predict(model, X_train, y_train, X_test, y_test, forecast=False, scaler_y=None, batch_size=32):
+    x_val = X_train[1400:]
+    y_val = y_train[1400:]
+    if len(model.inputs)>1:
+        x_val = []
+        new_train = []
+        for i in X_train:
+            new_train.append(i[:1400])
+            x_val.append(i[1400:])
+        X_train = new_train
     if scaler_y==None:
-        model.fit(X_train, y_train, epochs=1000, batch_size=batch_size, verbose=0, callbacks=[es, tensorboard])
+        model.fit(X_train[:1400], y_train[:1400], epochs=1000, batch_size=batch_size, verbose=0, callbacks=[es, tensorboard], validation_data=(x_val, y_val))
         pred_model = model.predict(X_test)
         if forecast==False:
             pred = pd.DataFrame(pred_model, columns=y_test.columns, index=y_test.index)           
         else:
             pred = pd.DataFrame(pred_model[-1], columns=y_test.columns, index=test.index.unique())
     else:
-        model.fit(X_train, y_train, epochs=1000, batch_size=batch_size, verbose=0, callbacks=[es_scale, tensorboard])
+        model.fit(X_train[:1400], y_train[:1400], epochs=1000, batch_size=batch_size, verbose=0, callbacks=[es_scale, tensorboard], validation_data=(x_val, y_val))
         pred_model = model.predict(X_test)
         if forecast==False:
             pred_model = scaler_y.inverse_transform(pred_model)
@@ -231,7 +239,7 @@ def experiment(X_train, X_test, y_train, y_test, model, model_number, descriptio
         hypertuned_model, best_params = tuning(model, X_train_mini, y_train_mini, X_val_mini, y_val_mini, scaler_y)
     else:
         hp = keras_tuner.HyperParameters()
-        hp.Fixed('learning_rate', 0.00025)
+        hp.Fixed('learning_rate', 0.00075)
         hp.Fixed('optimizer', 'adam')
         best_params = 'No tuning'
         hypertuned_model = model(hp)
